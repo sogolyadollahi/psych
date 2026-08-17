@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:17
+    container_name: psych-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: psych
+      POSTGRES_USER: psych
+      POSTGRES_PASSWORD: psych_dev_password
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - psych_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  psych_postgres_data:
