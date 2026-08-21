@@ -31,14 +31,14 @@ def create_access_token(
 
     expire = datetime.now(timezone.utc) + expires_delta
 
-    playload = {
+    payload = {
         "sub": subject,
         "exp": expire,
 
     }    
 
     return jwt.encode(
-        playload,
+        payload,
         settings.SECRET_KEY,
         algorithm=settings.ALGORITHM,
     )

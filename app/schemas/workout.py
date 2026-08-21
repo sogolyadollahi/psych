@@ -11,7 +11,7 @@ class WorkoutCreate(BaseModel):
 class WorkoutUpdate(BaseModel):
     muscle_group: str | None= Field(
         default=None,
-        min_length=1'
+        min_length=1,
         max_length=100,
     )
     duration_minutes: int | None = Field(
