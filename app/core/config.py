@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     # -------------------------
     AI_API_KEY: str = ""
 
+    # -------------------------
+    # Nutrition / USDA
+    # -------------------------
+    USDA_API_KEY: str = ""
+    USDA_API_BASE_URL: str = "https://api.nal.usda.gov/fdc/v1"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
