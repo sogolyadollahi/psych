@@ -177,3 +177,25 @@ class MealDetailResponse(BaseModel):
     meal_date: date
     items: list[MealItemResponse]
     nutrition_totals: NutritionTotals
+
+class FoodSearchResult(BaseModel):
+    fdc_id: int
+    description: str
+    data_type: str | None = None
+
+
+class FoodNutritionRequest(BaseModel):
+    fdc_id: int = Field(gt=0)
+    quantity_grams: Decimal = Field(gt=0)
+
+
+class FoodNutritionResponse(BaseModel):
+    fdc_id: int
+    quantity_grams: Decimal
+
+    calories: Decimal
+    protein: Decimal
+    carbs: Decimal
+    fat: Decimal
+
+    source: str = "usda"

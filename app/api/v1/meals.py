@@ -1,12 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from decimal import Decimal
+
 
 from app.api.v1.deps import get_current_user
 from app.api.v1.meal_deps import (
     get_meal_item_service,
     get_meal_service,
+    get_nutrition_service,
 )
 from app.models.user import User
 from app.schemas.meal import (
+    FoodNutritionRequest,
+    FoodNutritionResponse,
+    FoodSearchResult,
     MealCreate,
     MealDetailResponse,
     MealItemCreate,
@@ -18,6 +24,7 @@ from app.schemas.meal import (
 )
 from app.services.meal_item_service import MealItemService
 from app.services.meal_service import MealService
+from app.services.nutrition.nutrition_service import NutritionService
 
 
 router = APIRouter(
@@ -25,6 +32,10 @@ router = APIRouter(
     tags=["Meals"],
 )
 
+
+# =========================================================
+# Meal
+# =========================================================
 
 @router.post(
     "",
@@ -55,6 +66,64 @@ def get_meals(
         user_id=current_user.id,
     )
 
+
+# =========================================================
+# Nutrition / Food
+# =========================================================
+
+@router.get(
+    "/foods/search",
+    response_model=list[FoodSearchResult],
+)
+def search_food(
+    query: str,
+    nutrition_service: NutritionService = Depends(
+        get_nutrition_service
+    ),
+):
+    foods = nutrition_service.search_food(
+        query=query,
+    )
+
+    return [
+        FoodSearchResult(
+            fdc_id=food["fdcId"],
+            description=food["description"],
+            data_type=food.get("dataType"),
+        )
+        for food in foods
+    ]
+
+
+@router.post(
+    "/foods/nutrition",
+    response_model=FoodNutritionResponse,
+)
+def get_food_nutrition(
+    data: FoodNutritionRequest,
+    nutrition_service: NutritionService = Depends(
+        get_nutrition_service
+    ),
+):
+    nutrition = nutrition_service.get_nutrition_for_food(
+        fdc_id=data.fdc_id,
+        quantity_grams=data.quantity_grams,
+    )
+
+    return FoodNutritionResponse(
+        fdc_id=data.fdc_id,
+        quantity_grams=data.quantity_grams,
+        calories=nutrition["calories"],
+        protein=nutrition["protein"],
+        carbs=nutrition["carbs"],
+        fat=nutrition["fat"],
+        source="usda",
+    )
+
+
+# =========================================================
+# Single Meal
+# =========================================================
 
 @router.get(
     "/{meal_id}",
@@ -88,7 +157,9 @@ def get_meal(
             detail="Meal not found",
         )
 
-    totals = MealService.calculate_nutrition_totals(items)
+    totals = MealService.calculate_nutrition_totals(
+        items
+    )
 
     return MealDetailResponse(
         id=meal.id,
@@ -150,6 +221,10 @@ def delete_meal(
 
     service.delete_meal(meal)
 
+
+# =========================================================
+# Meal Items
+# =========================================================
 
 @router.post(
     "/{meal_id}/items",
