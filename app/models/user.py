@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.core.database import Base
 
 class User(Base):
@@ -36,6 +37,11 @@ class User(Base):
     )
 
     meals: Mapped[list["Meal"]] = relationship(
+    back_populates="user",
+    cascade="all, delete-orphan",
+)
+
+    supplements: Mapped[list["Supplement"]] = relationship(
     back_populates="user",
     cascade="all, delete-orphan",
 )
