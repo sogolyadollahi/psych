@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class SupplementCreate(BaseModel):
+
     name: str = Field(
         min_length=1,
         max_length=100,
@@ -23,6 +24,7 @@ class SupplementCreate(BaseModel):
 
 
 class SupplementUpdate(BaseModel):
+
     name: str | None = Field(
         default=None,
         min_length=1,
@@ -46,6 +48,7 @@ class SupplementUpdate(BaseModel):
 
 
 class SupplementResponse(BaseModel):
+
     id: int
     name: str
     dosage: str
