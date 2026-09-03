@@ -65,6 +65,12 @@ class NutritionService:
             page_size=page_size,
         )
 
+    def get_food(
+        self,
+        fdc_id: int,
+    ) -> dict[str, Any]:
+        return self.provider.get_food(fdc_id)
+
     def get_nutrition_for_food(
         self,
         fdc_id: int,

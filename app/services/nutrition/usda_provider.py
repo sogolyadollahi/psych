@@ -6,6 +6,9 @@ from app.core.config import settings
 
 
 class USDAProvider:
+
+    REQUEST_TIMEOUT = 30.0
+
     def __init__(self) -> None:
         self.base_url = settings.USDA_API_BASE_URL.rstrip("/")
         self.api_key = settings.USDA_API_KEY
@@ -31,14 +34,25 @@ class USDAProvider:
             "pageSize": page_size,
         }
 
-        response = httpx.post(
-            url,
-            params=params,
-            json=payload,
-            timeout=10.0,
-        )
+        try:
+            response = httpx.post(
+                url,
+                params=params,
+                json=payload,
+                timeout=self.REQUEST_TIMEOUT,
+            )
 
-        response.raise_for_status()
+            response.raise_for_status()
+
+        except httpx.TimeoutException as exc:
+            raise RuntimeError(
+                "USDA API request timed out."
+            ) from exc
+
+        except httpx.HTTPError as exc:
+            raise RuntimeError(
+                "USDA API request failed."
+            ) from exc
 
         data = response.json()
 
@@ -54,12 +68,23 @@ class USDAProvider:
             "api_key": self.api_key,
         }
 
-        response = httpx.get(
-            url,
-            params=params,
-            timeout=10.0,
-        )
+        try:
+            response = httpx.get(
+                url,
+                params=params,
+                timeout=self.REQUEST_TIMEOUT,
+            )
 
-        response.raise_for_status()
+            response.raise_for_status()
+
+        except httpx.TimeoutException as exc:
+            raise RuntimeError(
+                "USDA API request timed out."
+            ) from exc
+
+        except httpx.HTTPError as exc:
+            raise RuntimeError(
+                "USDA API request failed."
+            ) from exc
 
         return response.json()
