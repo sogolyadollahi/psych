@@ -83,3 +83,5 @@ class ScannerService:
             source="USDA",
             source_food_id=str(fdc_id),
         )
+
+

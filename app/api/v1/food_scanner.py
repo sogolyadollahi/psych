@@ -1,7 +1,14 @@
-
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+import httpx
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.api.v1.deps import get_current_user
@@ -37,6 +44,13 @@ router = APIRouter(
 def get_scanner_service(
     db: Session,
 ) -> ScannerService:
+    """
+    Build and return ScannerService with its dependencies.
+
+    Currently MockFoodDetector is used for AI food detection.
+    It will later be replaced by the real AI detector.
+    """
+
     detector: FoodDetector = MockFoodDetector()
 
     provider = USDAProvider()
@@ -60,12 +74,6 @@ def get_scanner_service(
         meal_item_service=meal_item_service,
     )
 
-    return ScannerService(
-        detector=detector,
-        nutrition_service=nutrition_service,
-        meal_item_service=meal_item_service,
-    )
-
 
 @router.post(
     "/scan",
@@ -75,6 +83,12 @@ def get_scanner_service(
 async def scan_food(
     image: UploadFile = File(...),
 ) -> FoodScanResponse:
+    """
+    Validate an uploaded food image and detect food names.
+
+    Currently uses MockFoodDetector.
+    """
+
     image_bytes = await image.read()
 
     try:
@@ -88,8 +102,6 @@ async def scan_food(
             detail=str(exc),
         ) from exc
 
-    # Temporary detector for V1 development/testing.
-    # Will be replaced by the real AI detector later.
     detector: FoodDetector = MockFoodDetector()
 
     detections = detector.detect(
@@ -113,6 +125,10 @@ def get_food_candidates(
     page_size: int = 10,
     db: Session = Depends(get_db),
 ) -> FoodCandidateResponse:
+    """
+    Search USDA for foods matching the detected food name.
+    """
+
     if not detected_food.strip():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -127,10 +143,16 @@ def get_food_candidates(
 
     scanner_service = get_scanner_service(db)
 
-    candidates = scanner_service.find_candidates(
-        detected_food=detected_food,
-        page_size=page_size,
-    )
+    try:
+        candidates = scanner_service.find_candidates(
+            detected_food=detected_food,
+            page_size=page_size,
+        )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Food database service is currently unavailable.",
+        ) from exc
 
     return FoodCandidateResponse(
         detected_food=detected_food,
@@ -151,46 +173,25 @@ def create_scanned_food_item(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> MealItemResponse:
+    """
+    Create a MealItem using a user-selected USDA food
+    and the provided quantity in grams.
+    """
+
     scanner_service = get_scanner_service(db)
 
-    item = scanner_service.create_meal_item_from_food(
-        meal_id=data.meal_id,
-        user_id=current_user.id,
-        fdc_id=data.fdc_id,
-        quantity_grams=data.quantity_grams,
-    )
-
-    if item is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Meal not found or does not belong to the current user.",
+    try:
+        item = scanner_service.create_meal_item_from_food(
+            meal_id=data.meal_id,
+            user_id=current_user.id,
+            fdc_id=data.fdc_id,
+            quantity_grams=data.quantity_grams,
         )
-
-    return MealItemResponse.model_validate(
-        item,
-        from_attributes=True,
-    )
-
-
-@router.post(
-    "/items",
-    response_model=MealItemResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_scanned_food_item(
-    data: FoodScanItemCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> MealItemResponse:
-
-    scanner_service = get_scanner_service(db)
-
-    item = scanner_service.create_meal_item_from_food(
-        meal_id=data.meal_id,
-        user_id=current_user.id,
-        fdc_id=data.fdc_id,
-        quantity_grams=data.quantity_grams,
-    )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Food database service is currently unavailable.",
+        ) from exc
 
     if item is None:
         raise HTTPException(

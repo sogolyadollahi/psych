@@ -31,8 +31,9 @@ class Settings(BaseSettings):
     # -------------------------
     # AI
     # -------------------------
-    AI_API_KEY: str = ""
-
+    AI_PROVIDER: str = "gemini"
+    AI_MODEL: str = "gemini-3.8-flash"
+    GEMINI_API_KEY: str = ""
     # -------------------------
     # Nutrition / USDA
     # -------------------------
