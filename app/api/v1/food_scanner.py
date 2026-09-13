@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 import httpx
 from fastapi import (
     APIRouter,
@@ -12,6 +10,7 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from app.api.v1.deps import get_current_user
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
 from app.repositories.meal_item_repository import MealItemRepository
@@ -29,6 +28,10 @@ from app.services.food_scanner.image_validator import (
     ImageValidator,
 )
 from app.services.food_scanner.mock_detector import MockFoodDetector
+from app.services.food_scanner.ollama_detector import (
+    FoodDetectionError,
+    OllamaFoodDetector,
+)
 from app.services.food_scanner.scanner_service import ScannerService
 from app.services.meal_item_service import MealItemService
 from app.services.nutrition.nutrition_service import NutritionService
@@ -41,17 +44,34 @@ router = APIRouter(
 )
 
 
+def get_food_detector() -> FoodDetector:
+    """
+    Build the configured food detector.
+
+    The detector implementation is selected using AI_PROVIDER.
+    """
+
+    provider = settings.AI_PROVIDER.lower().strip()
+
+    if provider == "ollama":
+        return OllamaFoodDetector()
+
+    if provider == "mock":
+        return MockFoodDetector()
+
+    raise RuntimeError(
+        f"Unsupported AI_PROVIDER: {settings.AI_PROVIDER}"
+    )
+
+
 def get_scanner_service(
     db: Session,
 ) -> ScannerService:
     """
     Build and return ScannerService with its dependencies.
-
-    Currently MockFoodDetector is used for AI food detection.
-    It will later be replaced by the real AI detector.
     """
 
-    detector: FoodDetector = MockFoodDetector()
+    detector = get_food_detector()
 
     provider = USDAProvider()
 
@@ -85,8 +105,6 @@ async def scan_food(
 ) -> FoodScanResponse:
     """
     Validate an uploaded food image and detect food names.
-
-    Currently uses MockFoodDetector.
     """
 
     image_bytes = await image.read()
@@ -96,17 +114,27 @@ async def scan_food(
             image=image_bytes,
             content_type=image.content_type,
         )
+
     except ImageValidationError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
 
-    detector: FoodDetector = MockFoodDetector()
+    detector = get_food_detector()
 
-    detections = detector.detect(
-        image_bytes,
-    )
+    try:
+        detections = detector.detect(
+            image_bytes,
+        )
+
+    except FoodDetectionError as exc:
+        print(f"\nFOOD DETECTION ERROR: {exc!r}\n")
+
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
 
     return FoodScanResponse(
         detections=[
@@ -148,10 +176,12 @@ def get_food_candidates(
             detected_food=detected_food,
             page_size=page_size,
         )
+
     except httpx.HTTPError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Food database service is currently unavailable.",
+        print(f"\nOLLAMA HTTP ERROR: {exc!r}\n")
+
+        raise FoodDetectionError(
+            "Ollama food detection service is unavailable."
         ) from exc
 
     return FoodCandidateResponse(
@@ -187,6 +217,7 @@ def create_scanned_food_item(
             fdc_id=data.fdc_id,
             quantity_grams=data.quantity_grams,
         )
+
     except httpx.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

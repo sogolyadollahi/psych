@@ -31,9 +31,15 @@ class Settings(BaseSettings):
     # -------------------------
     # AI
     # -------------------------
-    AI_PROVIDER: str = "gemini"
-    AI_MODEL: str = "gemini-3.8-flash"
+    AI_PROVIDER: str = "ollama"
+    AI_MODEL: str = "gemma3:4b"
+
+    # Ollama
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+
+    # Gemini
     GEMINI_API_KEY: str = ""
+
     # -------------------------
     # Nutrition / USDA
     # -------------------------
