@@ -5,6 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -33,15 +34,19 @@ class User(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
-
     )
 
     meals: Mapped[list["Meal"]] = relationship(
-    back_populates="user",
-    cascade="all, delete-orphan",
-)
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     supplements: Mapped[list["Supplement"]] = relationship(
-    back_populates="user",
-    cascade="all, delete-orphan",
-)
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    progress_records: Mapped[list["Progress"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
