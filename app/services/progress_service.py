@@ -196,3 +196,4 @@ class ProgressService:
             last_value - first_value,
             2,
         )
+        
