@@ -14,24 +14,16 @@ class SupplementRepository:
     ):
         self.db = db
 
-    # =====================================================
-    # Create
-    # =====================================================
-
     def create(
         self,
         supplement: Supplement,
     ) -> Supplement:
 
         self.db.add(supplement)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(supplement)
 
         return supplement
-
-    # =====================================================
-    # Get By ID
-    # =====================================================
 
     def get_by_id(
         self,
@@ -46,10 +38,6 @@ class SupplementRepository:
         )
 
         return self.db.scalar(statement)
-
-    # =====================================================
-    # Get All User Supplements
-    # =====================================================
 
     def get_by_user_id(
         self,
@@ -70,10 +58,6 @@ class SupplementRepository:
         return list(
             self.db.scalars(statement).all()
         )
-
-    # =====================================================
-    # Get Active Supplements By Reminder Time
-    # =====================================================
 
     def get_active_by_reminder_time(
         self,
@@ -96,23 +80,15 @@ class SupplementRepository:
             self.db.scalars(statement).all()
         )
 
-    # =====================================================
-    # Update
-    # =====================================================
-
     def update(
         self,
         supplement: Supplement,
     ) -> Supplement:
 
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(supplement)
 
         return supplement
-
-    # =====================================================
-    # Delete
-    # =====================================================
 
     def delete(
         self,
@@ -120,4 +96,3 @@ class SupplementRepository:
     ) -> None:
 
         self.db.delete(supplement)
-        self.db.commit()

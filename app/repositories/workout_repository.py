@@ -11,7 +11,7 @@ class WorkoutRepository:
 
     def create(self, workout: Workout) -> Workout:
         self.db.add(workout)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(workout)
 
         return workout
@@ -33,11 +33,10 @@ class WorkoutRepository:
         return list(self.db.scalars(statement).all())
 
     def update(self, workout: Workout) -> Workout:
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(workout)
 
         return workout
 
     def delete(self, workout: Workout) -> None:
         self.db.delete(workout)
-        self.db.commit()

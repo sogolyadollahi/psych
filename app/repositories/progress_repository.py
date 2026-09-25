@@ -16,7 +16,7 @@ class ProgressRepository:
         progress: Progress,
     ) -> Progress:
         self.db.add(progress)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(progress)
 
         return progress
@@ -81,7 +81,7 @@ class ProgressRepository:
         self,
         progress: Progress,
     ) -> Progress:
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(progress)
 
         return progress
@@ -91,4 +91,3 @@ class ProgressRepository:
         progress: Progress,
     ) -> None:
         self.db.delete(progress)
-        self.db.commit()

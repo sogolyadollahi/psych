@@ -1,17 +1,29 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.v1 import users
 from app.api.v1.auth import router as auth_router
-from app.api.v1.meals import router as meal_router
-from app.api.v1.workout import router as workout_router
-from app.api.v1.supplement import router as supplement_router
-from app.api.v1.food_scanner import router as food_scanner_router
-from app.api.v1.progress import router as progress_router
 from app.api.v1.dashboard import router as dashboard_router
-from app.services.scheduler import AppScheduler
+from app.api.v1.food_scanner import router as food_scanner_router
+from app.api.v1.meals import router as meal_router
+from app.api.v1.progress import router as progress_router
 from app.api.v1.statistics import router as statistics_router
+from app.api.v1.supplement import router as supplement_router
+from app.api.v1.workout import router as workout_router
+from app.core.exception_handlers import (
+    http_exception_handler,
+    unhandled_exception_handler,
+    validation_exception_handler,
+)
+from app.core.logging_config import setup_logging
+from app.services.scheduler import AppScheduler
 
+
+setup_logging()
 
 scheduler = AppScheduler()
 
@@ -32,6 +44,34 @@ app = FastAPI(
 )
 
 
+app.add_exception_handler(
+    StarletteHTTPException,
+    http_exception_handler,
+)
+
+app.add_exception_handler(
+    RequestValidationError,
+    validation_exception_handler,
+)
+
+app.add_exception_handler(
+    Exception,
+    unhandled_exception_handler,
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.get("/health")
 def health_check():
     return {"status": "OK"}
@@ -45,3 +85,4 @@ app.include_router(food_scanner_router, prefix="/api/v1")
 app.include_router(progress_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(statistics_router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")

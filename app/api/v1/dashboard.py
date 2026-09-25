@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -68,6 +68,12 @@ def get_dashboard_summary(
 
     if start_date is None:
         start_date = end_date - timedelta(days=6)
+
+    if start_date > end_date:
+        raise HTTPException(
+            status_code=400,
+            detail="start_date must be before or equal to end_date",
+        )    
 
     return service.get_summary(
         user_id=current_user.id,

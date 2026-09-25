@@ -216,7 +216,7 @@ def test_get_progress_other_user_cannot_access():
 
         assert response.status_code == 404
 
-        assert response.json()["detail"] == (
+        assert response.json()["error"]["message"] == (
             "Progress record not found"
         )
 
@@ -245,7 +245,7 @@ def test_get_progress_not_found():
 
         assert response.status_code == 404
 
-        assert response.json()["detail"] == (
+        assert response.json()["error"]["message"] == (
             "Progress record not found"
         )
 
@@ -379,7 +379,7 @@ def test_get_progress_analytics_no_records():
 
         assert response.status_code == 404
 
-        assert response.json()["detail"] == (
+        assert response.json()["error"]["message"] == (
             "No progress records found for the selected date range"
         )
 
@@ -457,7 +457,7 @@ def test_update_progress_other_user_cannot_access():
 
         assert response.status_code == 404
 
-        assert response.json()["detail"] == (
+        assert response.json()["error"]["message"] == (
             "Progress record not found"
         )
 
@@ -510,7 +510,7 @@ def test_delete_progress_other_user_cannot_access():
 
         assert response.status_code == 404
 
-        assert response.json()["detail"] == (
+        assert response.json()["error"]["message"] == (
             "Progress record not found"
         )
 

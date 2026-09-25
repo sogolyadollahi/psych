@@ -11,7 +11,7 @@ class MealRepository:
 
     def create(self, meal: Meal) -> Meal:
         self.db.add(meal)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(meal)
 
         return meal
@@ -33,11 +33,10 @@ class MealRepository:
         return list(self.db.scalars(statement).all())
 
     def update(self, meal: Meal) -> Meal:
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(meal)
 
         return meal
 
     def delete(self, meal: Meal) -> None:
         self.db.delete(meal)
-        self.db.commit()

@@ -306,7 +306,7 @@ def test_get_supplement_other_user_cannot_access():
 
     assert response.status_code == 404
 
-    assert response.json()["detail"] == (
+    assert response.json()["error"]["message"] == (
         "Supplement not found"
     )
 
@@ -378,7 +378,7 @@ def test_update_supplement_other_user_cannot_access():
 
     assert response.status_code == 404
 
-    assert response.json()["detail"] == (
+    assert response.json()["error"]["message"] == (
         "Supplement not found"
     )
 
