@@ -4,6 +4,9 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 
 from app.api.v1 import users
 from app.api.v1.auth import router as auth_router
@@ -21,6 +24,7 @@ from app.core.exception_handlers import (
 )
 from app.core.logging_config import setup_logging
 from app.services.scheduler import AppScheduler
+from app.core.rate_limiter import limiter
 
 
 setup_logging()
@@ -37,12 +41,71 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 
+tags_metadata = [
+    {
+        "name": "Authentication",
+        "description": "Registration, login, and authentication operations.",
+    },
+    {
+        "name": "Workouts",
+        "description": "Create and manage user workouts.",
+    },
+    {
+        "name": "Meals",
+        "description": "Manage meals and meal items.",
+    },
+    {
+        "name": "Supplements",
+        "description": "Manage supplements and reminders.",
+    },
+    {
+        "name": "Food Scanner",
+        "description": "Validate and scan food images.",
+    },
+    {
+        "name": "Progress",
+        "description": "Track and analyze user progress.",
+    },
+    {
+        "name": "Dashboard",
+        "description": "Retrieve dashboard summaries and daily data.",
+    },
+    {
+        "name": "Statistics",
+        "description": "Retrieve fitness and nutrition statistics.",
+    },
+    {
+        "name": "Users",
+        "description": "Manage user profiles and accounts.",
+    },
+    {
+        "name": "Health",
+        "description": "API health monitoring.",
+    },
+]
+
+
+
 app = FastAPI(
     title="Psych API",
+    description=(
+        "Psych is a fitness and nutrition tracking API "
+        "for workouts, meals, supplements, progress, "
+        "food scanning, and user profiles."
+    ),
     version="1.0.0",
+    openapi_tags=tags_metadata,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
+)
 
 app.add_exception_handler(
     StarletteHTTPException,
@@ -72,7 +135,12 @@ app.add_middleware(
 )
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    summary="Health check",
+    description="Check whether the Psych API is running.",
+    tags=["Health"],
+)
 def health_check():
     return {"status": "OK"}
 

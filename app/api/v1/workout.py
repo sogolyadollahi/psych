@@ -22,6 +22,12 @@ router = APIRouter(
     "",
     response_model=WorkoutResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Create workout",
+    description="Create a new workout for the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        422: {"description": "Validation error."},
+    },
 )
 def create_workout(
     workout_data: WorkoutCreate,
@@ -39,6 +45,11 @@ def create_workout(
 @router.get(
     "",
     response_model=list[WorkoutResponse],
+    summary="List workouts",
+    description="Return all workouts belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+    },
 )
 def get_workouts(
     current_user: User = Depends(get_current_user),
@@ -54,6 +65,12 @@ def get_workouts(
 @router.get(
     "/{workout_id}",
     response_model=WorkoutResponse,
+    summary="Get workout",
+    description="Return a specific workout belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Workout not found."},
+    },
 )
 def get_workout(
     workout_id: int,
@@ -78,6 +95,13 @@ def get_workout(
 @router.patch(
     "/{workout_id}",
     response_model=WorkoutResponse,
+    summary="Update workout",
+    description="Update a workout belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Workout not found."},
+        422: {"description": "Validation error."},
+    },
 )
 def update_workout(
     workout_id: int,
@@ -104,6 +128,12 @@ def update_workout(
 @router.delete(
     "/{workout_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete workout",
+    description="Delete a workout belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Workout not found."},
+    },
 )
 def delete_workout(
     workout_id: int,

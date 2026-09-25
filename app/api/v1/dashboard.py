@@ -37,6 +37,11 @@ def get_dashboard_service(
 @router.get(
     "/today",
     response_model=DashboardTodayResponse,
+    summary="Get today's dashboard",
+    description="Return today's fitness and nutrition dashboard for the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+    },
 )
 def get_today_dashboard(
     current_user: User = Depends(get_current_user),
@@ -50,6 +55,12 @@ def get_today_dashboard(
 @router.get(
     "/summary",
     response_model=DashboardSummaryResponse,
+    summary="Get dashboard summary",
+    description="Return a dashboard summary for the authenticated user, optionally filtered by date range.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        422: {"description": "Validation error."},
+    },
 )
 def get_dashboard_summary(
     start_date: date | None = Query(

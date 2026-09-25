@@ -32,6 +32,12 @@ def get_statistics_service(
 @router.get(
     "",
     response_model=StatisticsResponse,
+    summary="Get statistics",
+    description="Return fitness and nutrition statistics for the authenticated user, optionally filtered by date range.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        422: {"description": "Validation error."},
+    },
 )
 def get_statistics(
     start_date: date | None = Query(default=None),

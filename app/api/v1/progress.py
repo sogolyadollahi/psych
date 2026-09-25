@@ -25,6 +25,12 @@ router = APIRouter(
     "",
     response_model=ProgressResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Create progress record",
+    description="Create a new progress record for the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        422: {"description": "Validation error."},
+    },
 )
 def create_progress(
     progress_data: ProgressCreate,
@@ -42,6 +48,11 @@ def create_progress(
 @router.get(
     "",
     response_model=list[ProgressResponse],
+    summary="List progress records",
+    description="Return all progress records belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+    },
 )
 def get_progress_records(
     current_user: User = Depends(get_current_user),
@@ -57,6 +68,12 @@ def get_progress_records(
 @router.get(
     "/analytics",
     response_model=ProgressAnalyticsResponse,
+    summary="Get progress analytics",
+    description="Return progress analytics for the authenticated user, optionally filtered by date range.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        422: {"description": "Validation error."},
+    },
 )
 def get_progress_analytics(
     start_date: date | None = None,
@@ -82,6 +99,12 @@ def get_progress_analytics(
 @router.get(
     "/{progress_id}",
     response_model=ProgressResponse,
+    summary="Get progress record",
+    description="Return a specific progress record belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Progress record not found."},
+    },
 )
 def get_progress(
     progress_id: int,
@@ -105,6 +128,13 @@ def get_progress(
 @router.patch(
     "/{progress_id}",
     response_model=ProgressResponse,
+    summary="Update progress record",
+    description="Update a progress record belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Progress record not found."},
+        422: {"description": "Validation error."},
+    },
 )
 def update_progress(
     progress_id: int,
@@ -130,6 +160,12 @@ def update_progress(
 @router.delete(
     "/{progress_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete progress record",
+    description="Delete a progress record belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Progress record not found."},
+    },
 )
 def delete_progress(
     progress_id: int,

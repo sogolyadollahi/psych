@@ -25,6 +25,12 @@ router = APIRouter(
     "",
     response_model=SupplementResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Create supplement",
+    description="Create a new supplement for the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        422: {"description": "Validation error."},
+    },
 )
 def create_supplement(
     data: SupplementCreate,
@@ -49,6 +55,11 @@ def create_supplement(
 @router.get(
     "",
     response_model=list[SupplementResponse],
+    summary="List supplements",
+    description="Return all supplements belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+    },
 )
 def get_supplements(
     current_user: User = Depends(get_current_user),
@@ -68,6 +79,12 @@ def get_supplements(
 @router.get(
     "/{supplement_id}",
     response_model=SupplementResponse,
+    summary="Get supplement",
+    description="Return a specific supplement belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Supplement not found."},
+    },
 )
 def get_supplement(
     supplement_id: int,
@@ -97,6 +114,13 @@ def get_supplement(
 @router.patch(
     "/{supplement_id}",
     response_model=SupplementResponse,
+    summary="Update supplement",
+    description="Update a supplement belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Supplement not found."},
+        422: {"description": "Validation error."},
+    },
 )
 def update_supplement(
     supplement_id: int,
@@ -134,6 +158,12 @@ def update_supplement(
 @router.delete(
     "/{supplement_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete supplement",
+    description="Delete a supplement belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Supplement not found."},
+    },
 )
 def delete_supplement(
     supplement_id: int,

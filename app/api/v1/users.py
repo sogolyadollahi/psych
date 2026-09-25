@@ -27,6 +27,11 @@ def get_user_service(
 @router.get(
     "/me",
     response_model=UserProfileResponse,
+    summary="Get my profile",
+    description="Return the profile of the currently authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+    },
 )
 def get_my_profile(
     current_user: User = Depends(get_current_user),
@@ -40,6 +45,12 @@ def get_my_profile(
 @router.patch(
     "/me",
     response_model=UserProfileResponse,
+    summary="Update my profile",
+    description="Update the profile information of the currently authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        422: {"description": "Validation error."},
+    },
 )
 def update_my_profile(
     profile_data: UserProfileUpdate,
@@ -55,6 +66,12 @@ def update_my_profile(
 @router.patch(
     "/me/password",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Change my password",
+    description="Change the password of the currently authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        422: {"description": "Validation error."},
+    },
 )
 def change_my_password(
     password_data: ChangePasswordRequest,
@@ -95,6 +112,11 @@ def change_my_password(
 @router.delete(
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete my account",
+    description="Permanently delete the currently authenticated user's account and associated data.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+    },
 )
 def delete_my_account(
     current_user: User = Depends(get_current_user),

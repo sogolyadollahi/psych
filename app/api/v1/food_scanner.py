@@ -1,17 +1,21 @@
 import httpx
+
 from fastapi import (
     APIRouter,
     Depends,
     File,
     HTTPException,
+    Request,
     UploadFile,
     status,
 )
+
 from sqlalchemy.orm import Session
 
 from app.api.v1.deps import get_current_user
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limiter import limiter
 from app.models.user import User
 from app.repositories.meal_item_repository import MealItemRepository
 from app.repositories.meal_repository import MealRepository
@@ -99,8 +103,19 @@ def get_scanner_service(
     "/scan",
     response_model=FoodScanResponse,
     status_code=status.HTTP_200_OK,
+    summary="Scan food image",
+    description="Validate and scan a food image, then return detected food information.",
+    responses={
+        400: {"description": "Invalid or unsupported image."},
+        401: {"description": "Authentication credentials are invalid or missing."},
+        413: {"description": "Image file is too large."},
+        422: {"description": "Validation error."},
+        429: {"description": "Too many scan requests."},
+    },
 )
+@limiter.limit("10/minute")
 async def scan_food(
+    request: Request,
     image: UploadFile = File(...),
 ) -> FoodScanResponse:
     """
@@ -147,6 +162,11 @@ async def scan_food(
 @router.get(
     "/candidates",
     response_model=FoodCandidateResponse,
+    summary="Get food candidates",
+    description="Return candidate foods matching the detected food name.",
+    responses={
+        422: {"description": "Validation error."},
+    },
 )
 def get_food_candidates(
     detected_food: str,
@@ -197,6 +217,13 @@ def get_food_candidates(
     "/items",
     response_model=MealItemResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Create scanned food item",
+    description="Create a meal item from scanned food data for the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Related meal or food item not found."},
+        422: {"description": "Validation error."},
+    },
 )
 def create_scanned_food_item(
     data: FoodScanItemCreate,

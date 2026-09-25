@@ -41,6 +41,12 @@ router = APIRouter(
     "",
     response_model=MealResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Create meal",
+    description="Create a new meal for the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        422: {"description": "Validation error."},
+    },
 )
 def create_meal(
     data: MealCreate,
@@ -57,6 +63,11 @@ def create_meal(
 @router.get(
     "",
     response_model=list[MealResponse],
+    summary="List meals",
+    description="Return all meals belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+    },
 )
 def get_meals(
     current_user: User = Depends(get_current_user),
@@ -74,6 +85,11 @@ def get_meals(
 @router.get(
     "/foods/search",
     response_model=list[FoodSearchResult],
+    summary="Search foods",
+    description="Search for foods using the nutrition service.",
+    responses={
+        422: {"description": "Validation error."},
+    },
 )
 def search_food(
     query: str,
@@ -98,6 +114,11 @@ def search_food(
 @router.post(
     "/foods/nutrition",
     response_model=FoodNutritionResponse,
+    summary="Get food nutrition",
+    description="Retrieve nutritional information for a food.",
+    responses={
+        422: {"description": "Validation error."},
+    },
 )
 def get_food_nutrition(
     data: FoodNutritionRequest,
@@ -128,6 +149,12 @@ def get_food_nutrition(
 @router.get(
     "/{meal_id}",
     response_model=MealDetailResponse,
+    summary="Get meal",
+    description="Return a specific meal belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Meal not found."},
+    },
 )
 def get_meal(
     meal_id: int,
@@ -174,6 +201,13 @@ def get_meal(
 @router.patch(
     "/{meal_id}",
     response_model=MealResponse,
+    summary="Update meal",
+    description="Update a meal belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Meal not found."},
+        422: {"description": "Validation error."},
+    },
 )
 def update_meal(
     meal_id: int,
@@ -202,6 +236,12 @@ def update_meal(
 @router.delete(
     "/{meal_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete meal",
+    description="Delete a meal belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Meal not found."},
+    },
 )
 def delete_meal(
     meal_id: int,
@@ -230,6 +270,13 @@ def delete_meal(
     "/{meal_id}/items",
     response_model=MealItemResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Add meal item",
+    description="Add a food item to a meal belonging to the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Meal not found."},
+        422: {"description": "Validation error."},
+    },
 )
 def create_meal_item(
     meal_id: int,
@@ -263,6 +310,13 @@ def create_meal_item(
 @router.patch(
     "/{meal_id}/items/{item_id}",
     response_model=MealItemResponse,
+    summary="Update meal item",
+    description="Update an item belonging to a meal of the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Meal or meal item not found."},
+        422: {"description": "Validation error."},
+    },
 )
 def update_meal_item(
     meal_id: int,
@@ -299,6 +353,12 @@ def update_meal_item(
 @router.delete(
     "/{meal_id}/items/{item_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete meal item",
+    description="Delete an item belonging to a meal of the authenticated user.",
+    responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
+        404: {"description": "Meal or meal item not found."},
+    },
 )
 def delete_meal_item(
     meal_id: int,
