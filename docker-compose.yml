@@ -15,5 +15,25 @@ services:
     volumes:
       - psych_postgres_data:/var/lib/postgresql/data
 
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: psych-backend
+    restart: unless-stopped
+
+    env_file:
+      - .env.docker
+
+    ports:
+      - "9000:8000"
+
+    depends_on:
+      - db
+
+    volumes:
+      - ./uploads:/app/uploads
+
 volumes:
   psych_postgres_data:

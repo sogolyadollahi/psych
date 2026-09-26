@@ -13,3 +13,4 @@ httpx
 pytest
 apscheduler
 slowapi
+email-validator
