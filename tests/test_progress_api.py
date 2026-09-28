@@ -526,4 +526,4 @@ def test_get_progress_requires_authentication():
         "/api/v1/progress",
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 401
