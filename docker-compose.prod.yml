@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+
+    env_file:
+      - .env.prod
+
+    volumes:
+      - psych_postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    env_file:
+      - .env.prod
+
+    ports:
+      - "9000:8000"
+
+    depends_on:
+      - db
+
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  psych_postgres_data:
