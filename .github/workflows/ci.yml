@@ -12,6 +12,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: postgresql+psycopg://psych:psych_test_password@localhost:5432/psych
+      SECRET_KEY: ci-test-secret
+
     services:
       postgres:
         image: postgres:17
@@ -42,15 +46,13 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run migrations
-        env:
-          DATABASE_URL: postgresql+psycopg://psych:psych_test_password@localhost:5432/psych
-          SECRET_KEY: ci-test-secret
         run: |
           alembic upgrade head
 
       - name: Run tests
-        env:
-          DATABASE_URL: postgresql+psycopg://psych:psych_test_password@localhost:5432/psych
-          SECRET_KEY: ci-test-secret
         run: |
           pytest -v
+
+      - name: Build Docker image
+        run: |
+          docker build -t psych:ci .
