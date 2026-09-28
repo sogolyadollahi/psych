@@ -16,3 +16,5 @@ slowapi
 email-validator
 openai
 google-genai
+
+ollama
