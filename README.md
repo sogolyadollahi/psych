@@ -1,604 +1,400 @@
-# Psych API
+# Psych
 
-Psych is a fitness and nutrition tracking backend built with **FastAPI**.
-It provides a REST API for managing workouts, meals, supplements, progress records, food scanning, nutrition data, user profiles, dashboards, and statistics.
+Psych is a backend-focused application built with **FastAPI** and **PostgreSQL**.
 
-The project is structured as a modular backend with separate API, service, repository, model, schema, and infrastructure layers.
+I built it mainly to work on the parts of backend development that are easy to skip when building small projects: authentication, database structure, service/repository separation, rate limiting, testing, Docker, CI, and integrating AI-related functionality into an actual backend.
+
+The project is still a work in progress, but the main backend structure is in place.
 
 ---
 
-## Features
+## What it does
 
-### Authentication & Security
+Psych currently includes:
 
 * User registration and login
+* Password hashing and verification
 * JWT-based authentication
-* Password hashing with Argon2
-* Protected API endpoints
-* Current-user authentication dependency
-* Password change
-* Account deletion
-* Request rate limiting
-* Centralized HTTP and validation error handling
+* Protected user endpoints
+* PostgreSQL database
+* SQLAlchemy ORM
+* Alembic migrations
+* Rate limiting
+* Automated tests
+* Docker
+* GitHub Actions CI
+* AI-related functionality
 
-### User Profile
-
-* Retrieve authenticated user profile
-* Update profile information
-* Personal information and fitness-related profile fields
-* Password management
-* Account deletion
-
-### Workouts
-
-* Create workouts
-* List user workouts
-* Retrieve individual workouts
-* Update workouts
-* Delete workouts
-* User ownership protection
-
-### Meals & Nutrition
-
-* Create and manage meals
-* Add, update, and delete meal items
-* Search foods
-* Retrieve nutritional information
-* User ownership protection
-
-### Supplements
-
-* Create supplements
-* List supplements
-* Retrieve individual supplements
-* Update supplements
-* Delete supplements
-* Supplement reminder infrastructure
-
-### Progress Tracking
-
-* Create progress records
-* List progress records
-* Retrieve individual records
-* Update progress records
-* Delete progress records
-* Progress analytics
-* Date-range filtering
-
-### Food Scanner
-
-* Image upload validation
-* JPEG, PNG, and WEBP support
-* Image size validation
-* Corrupted-image detection
-* Food recognition service
-* Food candidate lookup
-* Creation of meal items from scanned food
-
-### Dashboard & Statistics
-
-* Daily dashboard
-* Dashboard summaries
-* Fitness statistics
-* Nutrition statistics
-* Date-range based statistics
-
-### Reliability
-
-* Database transaction handling
-* Centralized exception handling
-* Application logging
-* Background scheduler lifecycle
-* API rate limiting
-* Automated test suite
+The main idea was not to build a huge application. I wanted to build a backend where the different pieces actually have to work together.
 
 ---
 
-## Architecture
+## Tech Stack
 
-Psych follows a layered backend architecture:
+**Backend**
 
-```text
-Client
-  │
-  ▼
-FastAPI Router
-  │
-  ▼
-Service Layer
-  │
-  ▼
-Repository Layer
-  │
-  ▼
-SQLAlchemy Models
-  │
-  ▼
-PostgreSQL Database
-```
+* Python
+* FastAPI
+* Pydantic
+* SQLAlchemy
 
-Supporting components such as authentication, configuration, logging, scheduling, rate limiting, food recognition, and nutrition providers are organized under dedicated modules.
+**Database**
 
-### Main Layers
+* PostgreSQL
+* Alembic
 
-#### API Layer
+**Authentication & Security**
 
-Located in:
+* JWT
+* Argon2 password hashing
+* FastAPI security dependencies
+* Rate limiting with SlowAPI
 
-```text
-app/api/v1/
-```
+**Testing**
 
-Responsible for:
+* Pytest
 
-* HTTP endpoints
-* Request handling
-* Authentication dependencies
-* Response models
-* API-level validation and documentation
+**Infrastructure**
 
-#### Service Layer
-
-Located in:
-
-```text
-app/services/
-```
-
-Responsible for:
-
-* Business logic
-* Authentication operations
-* Workout management
-* Meal management
-* Supplement management
-* Progress management
-* Dashboard calculations
-* Statistics
-* Notifications
-* Food scanning
-* Nutrition services
-
-#### Repository Layer
-
-Located in:
-
-```text
-app/repositories/
-```
-
-Responsible for database access and persistence operations.
-
-#### Models
-
-Located in:
-
-```text
-app/models/
-```
-
-Contains SQLAlchemy database models.
-
-#### Schemas
-
-Located in:
-
-```text
-app/schemas/
-```
-
-Contains Pydantic request and response schemas.
-
-#### Core
-
-Located in:
-
-```text
-app/core/
-```
-
-Contains application infrastructure such as:
-
-* Configuration
-* Database setup
-* Security
-* Exception handling
-* Logging
-* Rate limiting
-* Scheduler
+* Docker
+* GitHub Actions
+* GitHub Container Registry
 
 ---
 
 ## Project Structure
 
 ```text
-psych/
+app/
+├── api/
+│   └── v1/
+│       └── auth.py
 │
-├── app/
-│   ├── ai/
-│   │   └── food_recognition.py
-│   │
-│   ├── api/
-│   │   └── v1/
-│   │       ├── auth.py
-│   │       ├── dashboard.py
-│   │       ├── deps.py
-│   │       ├── food_scanner.py
-│   │       ├── meals.py
-│   │       ├── progress.py
-│   │       ├── statistics.py
-│   │       ├── supplement.py
-│   │       ├── users.py
-│   │       └── workout.py
-│   │
-│   ├── core/
-│   │   ├── config.py
-│   │   ├── database.py
-│   │   ├── exception_handlers.py
-│   │   ├── logging_config.py
-│   │   ├── rate_limiter.py
-│   │   ├── scheduler.py
-│   │   └── security.py
-│   │
-│   ├── models/
-│   ├── repositories/
-│   ├── schemas/
-│   ├── services/
-│   │   ├── food_scanner/
-│   │   └── nutrition/
-│   ├── notifications/
-│   └── utils/
+├── core/
+│   ├── security.py
+│   └── rate_limiter.py
 │
-├── migrations/
-│   └── versions/
+├── services/
+│   └── auth_service.py
 │
-├── tests/
+├── repositories/
+│   └── ...
 │
-├── uploads/
-│   ├── meals/
-│   └── progress/
+├── models/
+│   └── ...
 │
-├── Dockerfile
-├── docker-compose.yml
-├── alembic.ini
-├── requirements.txt
-├── .env.example
-├── .gitignore
-└── README.md
+├── schemas/
+│   └── ...
+│
+└── ai/
+    └── ...
+    
+tests/
+└── test_auth.py
 ```
 
----
+The project is separated into API, service, repository, schema, model, and core layers.
 
-## Tech Stack
-
-| Component        | Technology        |
-| ---------------- | ----------------- |
-| API Framework    | FastAPI           |
-| ASGI Server      | Uvicorn           |
-| ORM              | SQLAlchemy        |
-| Database         | PostgreSQL        |
-| Database Driver  | psycopg           |
-| Migrations       | Alembic           |
-| Validation       | Pydantic          |
-| Configuration    | Pydantic Settings |
-| Authentication   | JWT               |
-| Password Hashing | Argon2 via pwdlib |
-| Image Processing | Pillow            |
-| Rate Limiting    | SlowAPI           |
-| Scheduling       | APScheduler       |
-| Testing          | Pytest            |
-| HTTP Client      | HTTPX             |
-| File Uploads     | python-multipart  |
+I kept this separation because I didn't want the route handlers to contain all of the application logic.
 
 ---
 
-## Requirements
+# Authentication
 
-Before running the project, make sure the following are available:
+Authentication is handled with JWT access tokens.
 
-* Python
-* PostgreSQL
-* Git
+The basic flow is:
 
-A virtual environment is recommended.
+```text
+Register
+   ↓
+Hash password
+   ↓
+Store user in PostgreSQL
+
+Login
+   ↓
+Find user by email
+   ↓
+Verify password
+   ↓
+Create JWT
+   ↓
+Return access token
+
+Authenticated request
+   ↓
+Extract Bearer token
+   ↓
+Decode JWT
+   ↓
+Get user ID from "sub"
+   ↓
+Load current user
+   ↓
+Continue request
+```
+
+Passwords are never stored directly.
+
+The password is hashed using `PasswordHash.recommended()` and verified when the user logs in.
+
+The JWT contains the user's ID as the `sub` claim and an expiration time.
+
+Tokens are signed using the configured secret key and algorithm.
 
 ---
 
-## Installation
+## Why JWT?
 
-Clone the project and enter the project directory:
+I used JWT because it fits the type of API I wanted to build and keeps authentication stateless on the server side.
+
+There is no server-side session object that needs to be stored for every logged-in user.
+
+This also gave me a chance to work with things like:
+
+* token expiration
+* token validation
+* invalid tokens
+* missing claims
+* protected FastAPI dependencies
+
+---
+
+# API
+
+Authentication endpoints currently include:
+
+### Register
+
+```http
+POST /api/v1/auth/register
+```
+
+Creates a new user.
+
+Duplicate emails return a conflict response instead of creating another account.
+
+### Login
+
+```http
+POST /api/v1/auth/login
+```
+
+Checks the user's credentials and returns an access token.
+
+### Current User
+
+```http
+GET /api/v1/auth/me
+```
+
+Requires a valid Bearer token and returns the authenticated user.
+
+---
+
+# Rate Limiting
+
+Authentication endpoints are rate limited.
+
+For example, registration and login are limited to:
+
+```text
+5 requests / minute
+```
+
+This is mainly there to prevent simple brute-force or abuse scenarios on authentication endpoints.
+
+I used **SlowAPI** for this instead of implementing the limiter myself.
+
+---
+
+# Database
+
+The project uses **PostgreSQL** with SQLAlchemy.
+
+Database changes are handled through **Alembic migrations** rather than manually changing the database schema.
+
+The general flow is:
+
+```text
+SQLAlchemy Models
+        ↓
+Alembic Migration
+        ↓
+PostgreSQL
+```
+
+This makes schema changes easier to track and reproduce across environments.
+
+---
+
+# Testing
+
+The authentication system has automated tests covering things such as:
+
+* Password hashing
+* Password verification
+* Token creation
+* Token decoding
+* Expired tokens
+* Invalid tokens
+* Tokens without the required subject
+
+Example:
+
+```text
+pytest
+```
+
+The goal here was not just to test the happy path.
+
+Authentication tends to fail in the edge cases, so I specifically tested invalid and expired tokens as well.
+
+---
+
+# Docker
+
+Psych can be run using Docker.
+
+The project also builds a Docker image through GitHub Actions and pushes it to **GitHub Container Registry**.
+
+This means the CI pipeline can verify the project and produce a container image without requiring a local Docker build.
+
+---
+
+# CI
+
+GitHub Actions currently handles the main CI flow.
+
+The pipeline:
+
+1. Starts PostgreSQL
+2. Sets up Python
+3. Installs dependencies
+4. Runs database migrations
+5. Runs the test suite
+6. Builds the Docker image
+7. Pushes the image to GHCR
+
+So a push to the repository is not just a code upload. The project is tested and built automatically.
+
+---
+
+# AI
+
+Psych also contains an AI-related part of the application.
+
+The idea is to keep AI functionality behind the backend rather than putting provider-specific logic directly into API routes.
+
+This makes it possible to change or add providers without making the rest of the application depend directly on one implementation.
+
+The AI side is still an area I plan to expand.
+
+---
+
+# What I learned building this
+
+The biggest thing I got from this project wasn't FastAPI itself.
+
+It was learning how the different parts of a backend fit together.
+
+For example:
+
+* A route shouldn't need to know how a password is hashed.
+* Authentication logic shouldn't be duplicated across endpoints.
+* Database access shouldn't be mixed with HTTP logic.
+* Tests should cover failure cases, not just successful requests.
+* Docker and CI should work with the project rather than being added at the very end.
+
+I also got more comfortable debugging problems that only show up when multiple parts of the system interact.
+
+---
+
+# Things I would improve
+
+Psych is not finished, and there are still things I want to improve.
+
+Some of the next things on my list are:
+
+* Expand the AI functionality
+* Add more endpoint coverage
+* Increase test coverage
+* Improve error handling
+* Add more production-oriented observability
+* Improve deployment configuration
+* Add more integration tests
+* Continue tightening the authentication and security layer
+
+---
+
+# Running Locally
+
+Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/sogolyadollahi/psych.git
 cd psych
 ```
 
-Create and activate a virtual environment.
+Create a virtual environment:
 
-### Windows / PowerShell
-
-```powershell
+```bash
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
 ```
 
-### Install dependencies
+Activate it:
+
+### Windows
+
+```bash
+.venv\Scripts\activate
+```
+
+### Linux / macOS
+
+```bash
+source .venv/bin/activate
+```
+
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
+Create your environment variables based on the project's configuration.
 
-## Environment Variables
-
-Create a `.env` file in the project root.
-
-Use `.env.example` as the template:
-
-```bash
-cp .env.example .env
-```
-
-On Windows PowerShell, you can also copy it with:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Configure the environment values required by the application, including the database connection and application security settings.
-
-**Do not commit `.env` to version control.**
-
----
-
-## Database
-
-Psych uses PostgreSQL with SQLAlchemy.
-
-After configuring the database connection, apply the Alembic migrations:
+Run the migrations:
 
 ```bash
 alembic upgrade head
 ```
 
-To check the current migration revision:
-
-```bash
-alembic current
-```
-
----
-
-## Running the API
-
-Start the development server with:
+Start the application:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-The API will normally be available at:
-
-```text
-http://127.0.0.1:8000
-```
+The API documentation is then available through FastAPI's Swagger UI.
 
 ---
 
-## API Documentation
+# Project Status
 
-FastAPI automatically provides interactive API documentation.
+**Active development**
 
-### Swagger UI
+The core backend architecture is working, but Psych is still a project I'm actively improving rather than something I consider finished.
 
-```text
-http://127.0.0.1:8000/docs
-```
-
-### ReDoc
-
-```text
-http://127.0.0.1:8000/redoc
-```
-
-### OpenAPI Schema
-
-```text
-http://127.0.0.1:8000/openapi.json
-```
+The repository is mainly a representation of how I approach backend development and the technologies I'm currently working with.
 
 ---
 
-## API Overview
+## Author
 
-All versioned API endpoints use the following base path:
+**Sogol Yadollahi**
 
-```text
-/api/v1
-```
+Backend Developer focused on Python, FastAPI, APIs, automation, and backend systems.
 
-### Authentication
-
-```text
-POST /api/v1/auth/register
-POST /api/v1/auth/login
-GET  /api/v1/auth/me
-```
-
-### Workouts
-
-```text
-POST   /api/v1/workouts
-GET    /api/v1/workouts
-GET    /api/v1/workouts/{workout_id}
-PATCH  /api/v1/workouts/{workout_id}
-DELETE /api/v1/workouts/{workout_id}
-```
-
-### Meals
-
-```text
-POST   /api/v1/meals
-GET    /api/v1/meals
-GET    /api/v1/meals/{meal_id}
-PATCH  /api/v1/meals/{meal_id}
-DELETE /api/v1/meals/{meal_id}
-
-POST   /api/v1/meals/{meal_id}/items
-PATCH  /api/v1/meals/{meal_id}/items/{item_id}
-DELETE /api/v1/meals/{meal_id}/items/{item_id}
-```
-
-### Food & Nutrition
-
-```text
-GET  /api/v1/meals/foods/search
-POST /api/v1/meals/foods/nutrition
-```
-
-### Supplements
-
-```text
-POST   /api/v1/supplements
-GET    /api/v1/supplements
-GET    /api/v1/supplements/{supplement_id}
-PATCH  /api/v1/supplements/{supplement_id}
-DELETE /api/v1/supplements/{supplement_id}
-```
-
-### Food Scanner
-
-```text
-POST /api/v1/food-scanner/scan
-GET  /api/v1/food-scanner/candidates
-POST /api/v1/food-scanner/items
-```
-
-### Progress
-
-```text
-POST   /api/v1/progress
-GET    /api/v1/progress
-GET    /api/v1/progress/{progress_id}
-PATCH  /api/v1/progress/{progress_id}
-DELETE /api/v1/progress/{progress_id}
-
-GET /api/v1/progress/analytics
-```
-
-### Dashboard
-
-```text
-GET /api/v1/dashboard/today
-GET /api/v1/dashboard/summary
-```
-
-### Statistics
-
-```text
-GET /api/v1/statistics
-```
-
-### Users
-
-```text
-GET    /api/v1/users/me
-PATCH  /api/v1/users/me
-PATCH  /api/v1/users/me/password
-DELETE /api/v1/users/me
-```
-
-### Health
-
-```text
-GET /health
-```
-
----
-
-## Testing
-
-Run the complete test suite with:
-
-```bash
-pytest -v
-```
-
-The project contains tests covering authentication, services, APIs, security-related behavior, nutrition, food recognition, reminders, transactions, dashboard functionality, statistics, supplements, progress, and user services.
-
----
-
-## Database Migrations
-
-Create a new migration after model changes:
-
-```bash
-alembic revision --autogenerate -m "describe your change"
-```
-
-Apply migrations:
-
-```bash
-alembic upgrade head
-```
-
-Rollback one migration:
-
-```bash
-alembic downgrade -1
-```
-
----
-
-## Docker
-
-The project includes:
-
-```text
-Dockerfile
-docker-compose.yml
-```
-
-Docker configuration can be used to package and run the backend and its supporting infrastructure.
-
----
-
-## Security
-
-The application includes several security mechanisms:
-
-* JWT authentication
-* Argon2 password hashing
-* Protected authenticated endpoints
-* User ownership checks
-* Request validation
-* Image validation
-* Rate limiting
-* Centralized error handling
-* Environment-based configuration
-
-Sensitive configuration should remain outside source control.
-
----
-
-## Development
-
-Recommended development workflow:
-
-```text
-1. Update models / schemas
-2. Create an Alembic migration
-3. Implement repository operations
-4. Implement service-layer business logic
-5. Expose or update API endpoints
-6. Add or update tests
-7. Run pytest
-8. Verify Swagger / ReDoc
-```
-
----
-
-## License
-
-See the `LICENSE` file included in the project repository.
+GitHub: [sogolyadollahi](https://github.com/sogolyadollahi)
