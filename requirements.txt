@@ -13,5 +13,8 @@ httpx
 pytest
 apscheduler
 slowapi
-email-validatoropenai
+email-validator
+openai
 google-genai
+
+ollama

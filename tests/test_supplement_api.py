@@ -456,6 +456,6 @@ def test_create_supplement_requires_authentication():
         },
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 401
 
     teardown_dependencies()

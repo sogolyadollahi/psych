@@ -8,9 +8,17 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgresql+psycopg://psych:psych_test_password@localhost:5432/psych
+      SECRET_KEY: ci-test-secret
 
     services:
       postgres:
@@ -42,15 +50,34 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run migrations
-        env:
-          DATABASE_URL: postgresql+psycopg://psych:psych_test_password@localhost:5432/psych
-          SECRET_KEY: ci-test-secret
         run: |
           alembic upgrade head
 
       - name: Run tests
-        env:
-          DATABASE_URL: postgresql+psycopg://psych:psych_test_password@localhost:5432/psych
-          SECRET_KEY: ci-test-secret
         run: |
           pytest -v
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/sogolyadollahi/psych
+          tags: |
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
