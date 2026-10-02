@@ -117,6 +117,7 @@ def get_scanner_service(
 async def scan_food(
     request: Request,
     image: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
 ) -> FoodScanResponse:
     """
     Validate an uploaded food image and detect food names.
