@@ -71,7 +71,7 @@ class USDAProvider:
             response = httpx.get(
                 url,
                 params=params,
-                timeout=self.REQUEST_TIMEOUT,
+                timeout=self.timeout,
             )
 
             response.raise_for_status()
