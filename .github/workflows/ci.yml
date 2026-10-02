@@ -18,7 +18,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql+psycopg://psych:psych_test_password@localhost:5432/psych
-      SECRET_KEY: ci-test-secret
+      SECRET_KEY: ci-test-secret-psych-backend-2026
 
     services:
       postgres:
