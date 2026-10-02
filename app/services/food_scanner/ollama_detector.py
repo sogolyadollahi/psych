@@ -1,11 +1,14 @@
 import base64
 import json
+import logging
 from typing import Any
 
 import httpx
 
 from app.core.config import settings
 from app.services.food_scanner.detector import FoodDetector
+
+logger = logging.getLogger(__name__)
 
 
 class FoodDetectionError(Exception):
@@ -17,7 +20,7 @@ class OllamaFoodDetector(FoodDetector):
         self,
         base_url: str | None = None,
         model: str | None = None,
-        timeout: float = 600.0,
+        timeout: float | None = None,
     ):
         self.base_url = (
             base_url or settings.OLLAMA_BASE_URL
@@ -27,7 +30,11 @@ class OllamaFoodDetector(FoodDetector):
             model or settings.AI_MODEL
         )
 
-        self.timeout = timeout
+        self.timeout = (
+            timeout
+            if timeout is not None
+            else settings.OLLAMA_TIMEOUT_SECONDS
+        )
 
     def detect(self, image: bytes) -> list[str]:
         if not image:
