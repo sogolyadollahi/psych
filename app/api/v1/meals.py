@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from decimal import Decimal
 
 
@@ -8,6 +8,7 @@ from app.api.v1.meal_deps import (
     get_meal_service,
     get_nutrition_service,
 )
+from app.core.rate_limiter import limiter
 from app.models.user import User
 from app.schemas.meal import (
     FoodNutritionRequest,
@@ -88,18 +89,30 @@ def get_meals(
     summary="Search foods",
     description="Search for foods using the nutrition service.",
     responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
         422: {"description": "Validation error."},
+        429: {"description": "Too many food search requests."},
+        502: {"description": "Food database service is unavailable."},
     },
 )
+@limiter.limit("20/minute")
 def search_food(
+    request: Request,
     query: str,
+    _current_user: User = Depends(get_current_user),
     nutrition_service: NutritionService = Depends(
         get_nutrition_service
     ),
 ):
-    foods = nutrition_service.search_food(
-        query=query,
-    )
+    try:
+        foods = nutrition_service.search_food(
+            query=query,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Food database service is currently unavailable.",
+        ) from exc
 
     return [
         FoodSearchResult(
@@ -117,19 +130,31 @@ def search_food(
     summary="Get food nutrition",
     description="Retrieve nutritional information for a food.",
     responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
         422: {"description": "Validation error."},
+        429: {"description": "Too many nutrition lookup requests."},
+        502: {"description": "Food database service is unavailable."},
     },
 )
+@limiter.limit("20/minute")
 def get_food_nutrition(
+    request: Request,
     data: FoodNutritionRequest,
+    _current_user: User = Depends(get_current_user),
     nutrition_service: NutritionService = Depends(
         get_nutrition_service
     ),
 ):
-    nutrition = nutrition_service.get_nutrition_for_food(
-        fdc_id=data.fdc_id,
-        quantity_grams=data.quantity_grams,
-    )
+    try:
+        nutrition = nutrition_service.get_nutrition_for_food(
+            fdc_id=data.fdc_id,
+            quantity_grams=data.quantity_grams,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Food database service is currently unavailable.",
+        ) from exc
 
     return FoodNutritionResponse(
         fdc_id=data.fdc_id,
