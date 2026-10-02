@@ -1,66 +1,69 @@
 # Psych
 
-Psych is a backend-focused application built with **FastAPI** and **PostgreSQL**.
+Psych is a backend-focused fitness and nutrition API built with **Python, FastAPI, and PostgreSQL**.
 
-I built it mainly to work on the parts of backend development that are easy to skip when building small projects: authentication, database structure, service/repository separation, rate limiting, testing, Docker, CI, and integrating AI-related functionality into an actual backend.
+The project was built to practice and demonstrate real backend concerns beyond basic CRUD: authentication, authorization, database design, service/repository separation, validation, transactions, rate limiting, external API integration, AI integration, testing, Docker, and CI/CD.
 
-The project is still a work in progress, but the main backend structure is in place.
+## Project Status
 
----
+**Backend v1.0 — feature complete and in final portfolio cleanup.**
 
-## What it does
+The core backend has been implemented and audited. The repository is intentionally kept backend-only; there is no frontend and no paid deployment requirement.
 
-Psych currently includes:
+The current CI pipeline verifies migrations, the automated test suite, and Docker image creation on pushes to `master`.
 
-* User registration and login
-* Password hashing and verification
-* JWT-based authentication
-* Protected user endpoints
-* PostgreSQL database
-* SQLAlchemy ORM
-* Alembic migrations
-* Rate limiting
-* Automated tests
-* Docker
-* GitHub Actions CI
-* AI-related functionality
+## Main Features
 
-The main idea was not to build a huge application. I wanted to build a backend where the different pieces actually have to work together.
+- User registration and login
+- JWT-based authentication
+- Argon2 password hashing
+- Protected endpoints and ownership checks
+- User profiles
+- Workout management
+- Meal and nutrition tracking
+- Supplement management
+- Reminders and scheduled tasks
+- Progress tracking
+- Dashboard and statistics
+- Food scanning / AI-assisted food detection
+- USDA FoodData Central integration
+- Request rate limiting
+- Input validation with Pydantic
+- Transaction-safe database operations
+- Structured API error responses
+- Configurable external-service timeouts
+- Centralized application logging
+- Automated tests
+- Docker support
+- GitHub Actions CI
+- GitHub Container Registry image publishing
 
----
+## Architecture
 
-## Tech Stack
+Psych follows a layered backend structure so that HTTP handling, business logic, persistence, and infrastructure concerns are not tightly coupled.
 
-**Backend**
+```text
+Client
+  |
+  v
+FastAPI API Routes
+  |
+  v
+Services
+  |
+  v
+Repositories
+  |
+  v
+SQLAlchemy ORM
+  |
+  v
+PostgreSQL
+```
 
-* Python
-* FastAPI
-* Pydantic
-* SQLAlchemy
+Cross-cutting concerns such as authentication, configuration, rate limiting, logging, scheduling, and exception handling live under `app/core/`.
 
-**Database**
-
-* PostgreSQL
-* Alembic
-
-**Authentication & Security**
-
-* JWT
-* Argon2 password hashing
-* FastAPI security dependencies
-* Rate limiting with SlowAPI
-
-**Testing**
-
-* Pytest
-
-**Infrastructure**
-
-* Docker
-* GitHub Actions
-* GitHub Container Registry
-
----
+AI and external-data integrations are kept behind dedicated components instead of placing provider-specific logic directly inside route handlers.
 
 ## Project Structure
 
@@ -68,53 +71,61 @@ The main idea was not to build a huge application. I wanted to build a backend w
 app/
 ├── api/
 │   └── v1/
-│       └── auth.py
+│       ├── auth.py
+│       ├── dashboard.py
+│       ├── food_scanner.py
+│       ├── meals.py
+│       ├── progress.py
+│       ├── statistics.py
+│       ├── supplement.py
+│       ├── users.py
+│       └── workout.py
 │
 ├── core/
-│   ├── security.py
-│   └── rate_limiter.py
-│
-├── services/
-│   └── auth_service.py
-│
-├── repositories/
-│   └── ...
+│   ├── config.py
+│   ├── database.py
+│   ├── exception_handlers.py
+│   ├── logging_config.py
+│   ├── rate_limiter.py
+│   ├── scheduler.py
+│   └── security.py
 │
 ├── models/
-│   └── ...
-│
 ├── schemas/
-│   └── ...
-│
-└── ai/
-    └── ...
-    
+├── repositories/
+├── services/
+├── notifications/
+├── ai/
+└── main.py
+
+alembic/
 tests/
-└── test_auth.py
+Dockerfile
+docker-compose.yml
+.github/
+└── workflows/
 ```
 
-The project is separated into API, service, repository, schema, model, and core layers.
+The exact contents of individual packages may evolve, but the main architectural boundaries are intentionally kept clear.
 
-I kept this separation because I didn't want the route handlers to contain all of the application logic.
+## Authentication & Security
 
----
-
-# Authentication
-
-Authentication is handled with JWT access tokens.
+Authentication uses JWT access tokens.
 
 The basic flow is:
 
 ```text
 Register
    ↓
+Validate input
+   ↓
 Hash password
    ↓
-Store user in PostgreSQL
+Store user
 
 Login
    ↓
-Find user by email
+Find user
    ↓
 Verify password
    ↓
@@ -124,211 +135,181 @@ Return access token
 
 Authenticated request
    ↓
-Extract Bearer token
+Validate Bearer token
    ↓
-Decode JWT
-   ↓
-Get user ID from "sub"
+Read user ID from "sub"
    ↓
 Load current user
    ↓
-Continue request
+Apply authorization / ownership checks
+   ↓
+Execute endpoint
 ```
 
-Passwords are never stored directly.
+Passwords are never stored directly. Password hashing uses `pwdlib.PasswordHash.recommended()`.
 
-The password is hashed using `PasswordHash.recommended()` and verified when the user logs in.
+JWTs contain the user ID in the `sub` claim and an expiration time. The signing secret, algorithm, and token lifetime are configurable through environment variables.
 
-The JWT contains the user's ID as the `sub` claim and an expiration time.
+Authentication endpoints are rate limited to reduce simple brute-force and abuse scenarios.
 
-Tokens are signed using the configured secret key and algorithm.
+The application also includes validation and error handling around external integrations, file uploads, database operations, and protected resources.
 
----
+## Database
 
-## Why JWT?
+Psych uses:
 
-I used JWT because it fits the type of API I wanted to build and keeps authentication stateless on the server side.
+- **PostgreSQL**
+- **SQLAlchemy**
+- **Alembic**
 
-There is no server-side session object that needs to be stored for every logged-in user.
+Database changes are represented as migrations rather than manual schema changes.
 
-This also gave me a chance to work with things like:
+The request-level database dependency commits successful transactions, rolls back failed transactions, and closes the session.
 
-* token expiration
-* token validation
-* invalid tokens
-* missing claims
-* protected FastAPI dependencies
+Foreign-key relationships use cascading behavior where appropriate so user-owned data does not become orphaned.
 
----
+## API Areas
 
-# API
+The API is organized under `/api/v1/`.
 
-Authentication endpoints currently include:
+| Area | Purpose |
+|---|---|
+| Auth | Registration, login, current-user authentication |
+| Users | User/profile operations |
+| Workouts | Workout data and tracking |
+| Meals | Meals, food items, nutrition, USDA integration |
+| Supplements | Supplement records and management |
+| Progress | Body measurements and progress tracking |
+| Dashboard | Aggregated user dashboard data |
+| Statistics | Date-based statistics and summaries |
+| Food Scanner | Image-based food detection and candidates |
 
-### Register
+FastAPI automatically exposes interactive API documentation when documentation is enabled.
 
-```http
-POST /api/v1/auth/register
+## Food Scanner & AI
+
+The food-scanning subsystem separates the API layer from the food-detection implementation.
+
+The project supports an Ollama-based detector and keeps provider-specific behavior behind dedicated detector classes.
+
+The food scanner also validates uploaded images and maps failures from external AI and USDA services to appropriate API responses instead of exposing raw provider exceptions.
+
+External service timeouts are configurable so a slow provider cannot hold a request indefinitely.
+
+## Rate Limiting
+
+Rate limiting is implemented with **SlowAPI**.
+
+Sensitive and externally backed endpoints use request limits to reduce abuse and accidental overload.
+
+Limits are applied at the API boundary rather than being mixed into business logic.
+
+## Error Handling
+
+Psych uses structured JSON responses for application errors.
+
+The general error shape is:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "...",
+    "message": "..."
+  }
+}
 ```
 
-Creates a new user.
+Unhandled exceptions are logged with their traceback while the API returns a generic 500 response instead of exposing internal implementation details.
 
-Duplicate emails return a conflict response instead of creating another account.
+External service failures are mapped to controlled API errors.
 
-### Login
+## Testing
 
-```http
-POST /api/v1/auth/login
-```
+The test suite covers multiple layers of the application, including:
 
-Checks the user's credentials and returns an access token.
+- Authentication and password security
+- JWT creation and validation
+- Protected endpoint dependencies
+- Dashboard behavior
+- Meal and nutrition services
+- Progress APIs and services
+- Reminder and scheduler behavior
+- Statistics
+- Supplement APIs and services
+- User services
+- Workout functionality
+- Food detection integrations
+- Transaction behavior
+- Database connectivity
+- Security-related behavior
 
-### Current User
+The CI pipeline runs the test suite against PostgreSQL rather than relying only on an isolated local environment.
 
-```http
-GET /api/v1/auth/me
-```
+## Docker
 
-Requires a valid Bearer token and returns the authenticated user.
+Psych includes:
 
----
+- `Dockerfile`
+- `docker-compose.yml`
+- `.env.docker.example`
+- `.dockerignore`
 
-# Rate Limiting
+For local Docker usage, create a private `.env.docker` from `.env.docker.example` and provide your own secrets/API keys.
 
-Authentication endpoints are rate limited.
+The application container exposes port `8000` internally and the provided Compose configuration maps it to port `9000` on the host.
 
-For example, registration and login are limited to:
+PostgreSQL runs as a separate Compose service with a persistent named volume.
 
-```text
-5 requests / minute
-```
+## CI/CD
 
-This is mainly there to prevent simple brute-force or abuse scenarios on authentication endpoints.
+GitHub Actions runs the main verification pipeline on pushes and pull requests.
 
-I used **SlowAPI** for this instead of implementing the limiter myself.
-
----
-
-# Database
-
-The project uses **PostgreSQL** with SQLAlchemy.
-
-Database changes are handled through **Alembic migrations** rather than manually changing the database schema.
-
-The general flow is:
-
-```text
-SQLAlchemy Models
-        ↓
-Alembic Migration
-        ↓
-PostgreSQL
-```
-
-This makes schema changes easier to track and reproduce across environments.
-
----
-
-# Testing
-
-The authentication system has automated tests covering things such as:
-
-* Password hashing
-* Password verification
-* Token creation
-* Token decoding
-* Expired tokens
-* Invalid tokens
-* Tokens without the required subject
-
-Example:
-
-```text
-pytest
-```
-
-The goal here was not just to test the happy path.
-
-Authentication tends to fail in the edge cases, so I specifically tested invalid and expired tokens as well.
-
----
-
-# Docker
-
-Psych can be run using Docker.
-
-The project also builds a Docker image through GitHub Actions and pushes it to **GitHub Container Registry**.
-
-This means the CI pipeline can verify the project and produce a container image without requiring a local Docker build.
-
----
-
-# CI
-
-GitHub Actions currently handles the main CI flow.
-
-The pipeline:
+The current pipeline:
 
 1. Starts PostgreSQL
-2. Sets up Python
-3. Installs dependencies
-4. Runs database migrations
-5. Runs the test suite
-6. Builds the Docker image
-7. Pushes the image to GHCR
+2. Checks out the repository
+3. Sets up Python
+4. Installs dependencies
+5. Runs Alembic migrations
+6. Runs the full pytest suite
+7. Logs into GitHub Container Registry
+8. Builds the Docker image
+9. Pushes the image to GHCR
 
-So a push to the repository is not just a code upload. The project is tested and built automatically.
+The latest cleanup pipeline was verified successfully, including:
 
----
+- dependency installation
+- database migrations
+- automated tests
+- Docker metadata generation
+- Docker image build
+- Docker image push
 
-# AI
+## Configuration
 
-Psych also contains an AI-related part of the application.
+Secrets and environment-specific configuration are not committed to the repository.
 
-The idea is to keep AI functionality behind the backend rather than putting provider-specific logic directly into API routes.
+Use the example environment file as a starting point:
 
-This makes it possible to change or add providers without making the rest of the application depend directly on one implementation.
+```text
+.env.docker.example
+```
 
-The AI side is still an area I plan to expand.
+Important values include:
 
----
+- `DATABASE_URL`
+- `SECRET_KEY`
+- `USDA_API_KEY`
+- `GEMINI_API_KEY`
+- `AI_PROVIDER`
+- `AI_MODEL`
+- external-service timeout settings
+- CORS configuration
 
-# What I learned building this
+Never commit real API keys or production secrets.
 
-The biggest thing I got from this project wasn't FastAPI itself.
-
-It was learning how the different parts of a backend fit together.
-
-For example:
-
-* A route shouldn't need to know how a password is hashed.
-* Authentication logic shouldn't be duplicated across endpoints.
-* Database access shouldn't be mixed with HTTP logic.
-* Tests should cover failure cases, not just successful requests.
-* Docker and CI should work with the project rather than being added at the very end.
-
-I also got more comfortable debugging problems that only show up when multiple parts of the system interact.
-
----
-
-# Things I would improve
-
-Psych is not finished, and there are still things I want to improve.
-
-Some of the next things on my list are:
-
-* Expand the AI functionality
-* Add more endpoint coverage
-* Increase test coverage
-* Improve error handling
-* Add more production-oriented observability
-* Improve deployment configuration
-* Add more integration tests
-* Continue tightening the authentication and security layer
-
----
-
-# Running Locally
+## Running Locally
 
 Clone the repository:
 
@@ -337,23 +318,19 @@ git clone https://github.com/sogolyadollahi/psych.git
 cd psych
 ```
 
-Create a virtual environment:
-
-```bash
-python -m venv .venv
-```
-
-Activate it:
+Create and activate a virtual environment:
 
 ### Windows
 
-```bash
-.venv\Scripts\activate
+```powershell
+python -m venv .venv
+.venv\\Scripts\\activate
 ```
 
 ### Linux / macOS
 
 ```bash
+python -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -363,33 +340,67 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Create your environment variables based on the project's configuration.
+Create a local `.env` containing the required configuration values.
 
-Run the migrations:
+Run migrations:
 
 ```bash
 alembic upgrade head
 ```
 
-Start the application:
+Start the API:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-The API documentation is then available through FastAPI's Swagger UI.
+### Docker Compose
 
----
+For Docker-based local development:
 
-# Project Status
+```bash
+cp .env.docker.example .env.docker
+```
 
-**Active development**
+Fill in the required secrets, then run:
 
-The core backend architecture is working, but Psych is still a project I'm actively improving rather than something I consider finished.
+```bash
+docker compose up --build
+```
 
-The repository is mainly a representation of how I approach backend development and the technologies I'm currently working with.
+The API will be available on:
 
----
+```text
+http://localhost:9000
+```
+
+## What This Project Demonstrates
+
+Psych was designed as a practical backend project rather than a collection of disconnected endpoints.
+
+The main engineering goals were:
+
+- Keep route handlers thin.
+- Separate business logic from persistence.
+- Make authentication reusable through dependencies.
+- Enforce ownership at the service/API boundary.
+- Treat database transactions as a first-class concern.
+- Validate external input before processing it.
+- Handle third-party failures explicitly.
+- Test failure paths as well as happy paths.
+- Make the project reproducible with migrations and Docker.
+- Automate verification through CI.
+
+## Project Scope
+
+The project intentionally does **not** include:
+
+- A frontend application
+- A paid production server
+- A managed database
+- Unnecessary background infrastructure such as Redis/Celery
+
+The goal is a focused backend portfolio project with enough real-world engineering concerns to demonstrate practical Python backend development.
 
 ## Author
 
@@ -397,4 +408,4 @@ The repository is mainly a representation of how I approach backend development 
 
 Backend Developer focused on Python, FastAPI, APIs, automation, and backend systems.
 
-GitHub: [sogolyadollahi](https://github.com/sogolyadollahi)
+GitHub: https://github.com/sogolyadollahi
