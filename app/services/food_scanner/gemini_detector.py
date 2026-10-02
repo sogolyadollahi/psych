@@ -1,4 +1,5 @@
 import json
+import logging
 from io import BytesIO
 
 from google import genai
@@ -8,6 +9,8 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 from app.services.food_scanner.detector import FoodDetector
+
+logger = logging.getLogger(__name__)
 
 
 class FoodDetectionError(Exception):
@@ -123,18 +126,17 @@ class GeminiFoodDetector(FoodDetector):
             raise
 
         except json.JSONDecodeError as exc:
-            print(
-                f"\nGemini JSON parsing error: {exc!r}"
+            logger.warning(
+                "Gemini returned invalid JSON: %s",
+                exc,
             )
             raise FoodDetectionError(
                 "Gemini returned invalid JSON."
             ) from exc
 
         except Exception as exc:
-            # Temporary debugging output.
-            # We will replace this with proper logging later.
-            print(
-                f"\nGemini original error: {exc!r}"
+            logger.exception(
+                "Gemini food detection failed"
             )
 
             raise FoodDetectionError(
