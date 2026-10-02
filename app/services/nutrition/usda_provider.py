@@ -7,11 +7,10 @@ from app.core.config import settings
 
 class USDAProvider:
 
-    REQUEST_TIMEOUT = 30.0
-
     def __init__(self) -> None:
         self.base_url = settings.USDA_API_BASE_URL.rstrip("/")
         self.api_key = settings.USDA_API_KEY
+        self.timeout = settings.USDA_TIMEOUT_SECONDS
 
         if not self.api_key:
             raise ValueError(
@@ -39,7 +38,7 @@ class USDAProvider:
                 url,
                 params=params,
                 json=payload,
-                timeout=self.REQUEST_TIMEOUT,
+                timeout=self.timeout,
             )
 
             response.raise_for_status()
