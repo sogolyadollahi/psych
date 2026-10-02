@@ -24,7 +24,7 @@ from app.core.exception_handlers import (
 )
 from app.core.logging_config import setup_logging
 from app.core.rate_limiter import limiter
-from app.services.scheduler import AppScheduler
+from app.core.scheduler import AppScheduler
 
 
 setup_logging()
