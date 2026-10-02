@@ -90,10 +90,18 @@ def get_progress_analytics(
             end_date=end_date,
         )
     except ValueError as error:
+        error_message = str(error)
+
+        if error_message == "start_date cannot be after end_date":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_message,
+            ) from error
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        )
+            detail=error_message,
+        ) from error
 
 
 @router.get(
