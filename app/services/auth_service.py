@@ -1,3 +1,4 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import (
@@ -28,7 +29,12 @@ class AuthService:
             hashed_password=hash_password(user_data.password),
         )
 
-        created_user = self.user_repository.create(user)
+        try:
+            created_user = self.user_repository.create(user)
+        except IntegrityError as error:
+            raise ValueError(
+                "Email is already registered"
+            ) from error
 
         return UserResponse.model_validate(created_user)
 
