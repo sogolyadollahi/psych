@@ -38,6 +38,7 @@ class Settings(BaseSettings):
 
     # Ollama
     OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_TIMEOUT_SECONDS: float = 120.0
 
     # Gemini
     GEMINI_API_KEY: str = ""
@@ -47,6 +48,7 @@ class Settings(BaseSettings):
     # -------------------------
     USDA_API_KEY: str = ""
     USDA_API_BASE_URL: str = "https://api.nal.usda.gov/fdc/v1"
+    USDA_TIMEOUT_SECONDS: float = 30.0
 
     model_config = SettingsConfigDict(
         env_file=".env",
