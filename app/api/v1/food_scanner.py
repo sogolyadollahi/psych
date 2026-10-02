@@ -1,4 +1,4 @@
-import httpx
+import logging
 
 from fastapi import (
     APIRouter,
@@ -40,6 +40,9 @@ from app.services.food_scanner.scanner_service import ScannerService
 from app.services.meal_item_service import MealItemService
 from app.services.nutrition.nutrition_service import NutritionService
 from app.services.nutrition.usda_provider import USDAProvider
+
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
@@ -111,6 +114,7 @@ def get_scanner_service(
         413: {"description": "Image file is too large."},
         422: {"description": "Validation error."},
         429: {"description": "Too many scan requests."},
+        503: {"description": "Food detection service is unavailable."},
     },
 )
 @limiter.limit("10/minute")
@@ -145,7 +149,10 @@ async def scan_food(
         )
 
     except FoodDetectionError as exc:
-        print(f"\nFOOD DETECTION ERROR: {exc!r}\n")
+        logger.warning(
+            "Food detection failed: %s",
+            exc,
+        )
 
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -166,12 +173,18 @@ async def scan_food(
     summary="Get food candidates",
     description="Return candidate foods matching the detected food name.",
     responses={
+        401: {"description": "Authentication credentials are invalid or missing."},
         422: {"description": "Validation error."},
+        429: {"description": "Too many candidate lookup requests."},
+        502: {"description": "Food database service is unavailable."},
     },
 )
+@limiter.limit("20/minute")
 def get_food_candidates(
+    request: Request,
     detected_food: str,
     page_size: int = 10,
+    _current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> FoodCandidateResponse:
     """
@@ -198,11 +211,15 @@ def get_food_candidates(
             page_size=page_size,
         )
 
-    except httpx.HTTPError as exc:
-        print(f"\nOLLAMA HTTP ERROR: {exc!r}\n")
+    except RuntimeError as exc:
+        logger.warning(
+            "Food database lookup failed: %s",
+            exc,
+        )
 
-        raise FoodDetectionError(
-            "Ollama food detection service is unavailable."
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Food database service is currently unavailable.",
         ) from exc
 
     return FoodCandidateResponse(
@@ -224,6 +241,7 @@ def get_food_candidates(
         401: {"description": "Authentication credentials are invalid or missing."},
         404: {"description": "Related meal or food item not found."},
         422: {"description": "Validation error."},
+        502: {"description": "Food database service is unavailable."},
     },
 )
 def create_scanned_food_item(
@@ -246,7 +264,12 @@ def create_scanned_food_item(
             quantity_grams=data.quantity_grams,
         )
 
-    except httpx.HTTPError as exc:
+    except RuntimeError as exc:
+        logger.warning(
+            "Food database lookup failed while creating meal item: %s",
+            exc,
+        )
+
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Food database service is currently unavailable.",
