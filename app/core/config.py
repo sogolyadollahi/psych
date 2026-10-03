@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     # Application
     # -------------------------
     APP_NAME: str = "Psych"
-    APP_VERSION: str = "0.1.0"
+    APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
     ENVIRONMENT: str = "development"
